@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPNG QR Projector Display</title>
+    <!-- QR Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* -------------- JACQUELYN'S EXACT STYLING -------------- */
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f4; }
+        .container { background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,.2); text-align: center; width: 400px; }
+        
+        .logo-box { border: 1px solid #ddd; border-radius: 20px; padding: 10px 20px; display: inline-block; margin-bottom: 20px; font-weight: bold; color: #d32f2f; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
+        .logo-box span { color: #1a237e; }
+        
+        .attendance-card { border: 3px solid #000; padding: 20px; text-align: left; position: relative; }
+        h2 { text-align: center; font-size: 18px; margin-top: 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        .info-line { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        .info-value { font-weight: 400; color: #333; }
+        
+        .input-section { margin-top: 25px; text-align: center; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; }
+
+        /* -------------- QR & TIMER STYLING -------------- */
+        #qrcode { margin: 15px auto; width: 180px; height: 180px; display: flex; justify-content: center; align-items: center; }
+        
+        .timer-container { width: 100%; background-color: #eee; height: 10px; border-radius: 5px; margin-top: 15px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #1a237e; width: 100%; transition: width 0.1s linear; }
+        
+        .countdown-text { font-size: 12px; color: #555; margin-top: 6px; font-family: monospace; }
+
+        .live-badge { background-color: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; vertical-align: middle; margin-left: 10px; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* -------------- NEW END CLASS BUTTON -------------- */
+        .btn-end {
+            margin-top: 25px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+        }
+
+        .btn-end:hover { background-color: #d32f2f; } /* Turns red on hover */
+
+        /* Closed State */
+        .closed-message {
+            font-size: 20px;
+            font-weight: bold;
+            color: #c62828;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-box">🏛️ <span>UPNG</span></div>
+
+        <div class="attendance-card">
+            <h2>Lecture Attendance <span id="liveBadge" class="live-badge">LIVE</span></h2>
+
+            <div class="info-line">CLASS: <span class="info-value">1.30823 Data Structures & Algorithms</span></div>
+            <div class="info-line">BUILDING: <span class="info-value">S3 (Maths/CS Building)</span></div>
+            <div class="info-line">ROOM: <span class="info-value">Snr Lab</span></div>
+
+            <div class="input-section">
+                <label id="statusLabel">SCAN CODE WITH PHONE</label>
+                
+                <!-- The QR Code Area -->
+                <div id="qrcode"></div>
+                
+                <!-- The Closed Message (Hidden initially) -->
+                <div id="closedMessage" class="closed-message">SESSION CLOSED</div>
+                
+                <!-- The Integrated Progress Bar -->
+                <div class="timer-container" id="timerBox">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="countdown-text" id="timerText">Refreshing in <span id="countdown">10</span>s</div>
+            </div>
+        </div>
+
+        <!-- The End Button -->
+        <button class="btn-end" onclick="endSession()">End Class Session</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const REFRESH_TIME = 10; 
+        const STUDENT_PAGE = "student_demo_gps.html"; 
+
+        let timeLeft = REFRESH_TIME;
+        let timerInterval = null; // Store the timer ID so we can stop it
+        let isSessionActive = true;
+
+        // 1. Initialize logic
+        function generateQR() {
+            if (!isSessionActive) return;
+
+            const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+            const baseURL = window.location.origin + path + "/" + STUDENT_PAGE;
+            const dynamicURL = `${baseURL}?session=${Date.now()}`;
+
+            document.getElementById("qrcode").innerHTML = "";
+            
+            new QRCode(document.getElementById("qrcode"), {
+                text: dynamicURL,
+                width: 180,
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        // 2. The Loop
+        function startLoop() {
+            generateQR(); // Run immediately
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+
+                document.getElementById("countdown").innerText = timeLeft;
+                const percentage = (timeLeft / REFRESH_TIME) * 100;
+                document.getElementById("progressBar").style.width = percentage + "%";
+
+                if (timeLeft <= 0) {
+                    timeLeft = REFRESH_TIME;
+                    generateQR(); 
+                }
+            }, 1000);
+        }
+
+        // 3. End Class Logic
+        function endSession() {
+            isSessionActive = false;
+            
+            // Stop the timer
+            clearInterval(timerInterval);
+
+            // Update UI elements
+            document.getElementById("qrcode").style.display = "none";
+            document.getElementById("timerBox").style.display = "none";
+            document.getElementById("timerText").style.display = "none";
+            document.getElementById("liveBadge").style.display = "none";
+            
+            // Show Closed Message
+            document.getElementById("closedMessage").style.display = "block";
+            
+            // Change Label
+            document.getElementById("statusLabel").innerText = "ATTENDANCE CLOSED";
+            document.getElementById("statusLabel").style.color = "#888";
+
+            // Disable the button
+            const btn = document.querySelector(".btn-end");
+            btn.innerText = "Class Ended";
+            btn.style.backgroundColor = "#888";
+            btn.disabled = true;
+            btn.style.cursor = "default";
+        }
+
+        // Run
+        startLoop();
+    </script>
+</body>
+</html>
