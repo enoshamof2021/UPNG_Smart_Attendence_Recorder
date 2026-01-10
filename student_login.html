@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPNG Smart-Scan (Student)</title>
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .mobile-container { width: 100%; max-width: 375px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; display: flex; flex-direction: column; }
+
+        /* FAKE BROWSER PERMISSION POPUP */
+        .browser-popup { position: absolute; top: 10px; left: 5%; width: 90%; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 15px; z-index: 9999; display: none; font-family: Arial, sans-serif; }
+        .popup-text { font-size: 14px; margin-bottom: 15px; color: #333; }
+        .popup-url { color: #2e7d32; font-weight: bold; }
+        .popup-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-allow { background-color: #1a73e8; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-block { background-color: transparent; color: #1a73e8; border: 1px solid #ddd; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+
+        /* UI Styles */
+        .header { background-color: #1a237e; color: white; padding: 20px; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        .logo-text { font-weight: bold; font-size: 24px; letter-spacing: 1px; }
+        .sub-text { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .class-card { margin: 20px; background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
+        .status-badge { background-color: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        h2 { margin: 10px 0 5px 0; font-size: 18px; color: #333; }
+        p { margin: 5px 0; font-size: 14px; color: #666; }
+        .location-tag { display: flex; align-items: center; justify-content: center; margin-top: 10px; color: #d32f2f; font-weight: bold; font-size: 13px; }
+        .action-area { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+        /* Login Box */
+        .google-login-box { border: 1px solid #dadce0; border-radius: 8px; padding: 20px; width: 100%; box-sizing: border-box; text-align: center; display: none; }
+        .input-group { text-align: left; margin-top: 20px; }
+        input[type="email"] { width: 100%; padding: 13px 10px; border: 1px solid #dadce0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        .login-btn { background-color: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; width: 100%; }
+        .start-btn { background: white; border: 1px solid #dadce0; color: #3c4043; width: 100%; padding: 12px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Status Screens */
+        #loading-screen, #success-screen, #failure-screen, #permission-denied-screen { display: none; text-align: center; margin-top: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1a237e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .big-icon { font-size: 60px; margin-bottom: 10px; }
+        .success-text { color: #2e7d32; }
+        .error-text { color: #c62828; }
+        
+        .failure-box { border: 1px solid #c62828; background-color: #ffebee; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: left; }
+        .denied-box { border: 1px solid #ff9800; background-color: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: left; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        
+        <!-- BROWSER POPUP -->
+        <div id="browser-permission" class="browser-popup">
+            <div class="popup-text"><span class="popup-url">smart-scan.upng.ac.pg</span> wants to know your location.</div>
+            <div class="popup-buttons">
+                <button class="btn-block" onclick="handlePermission(false)">Block</button>
+                <button class="btn-allow" onclick="handlePermission(true)">Allow</button>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="logo-text">UPNG SMART-SCAN</div>
+            <div class="sub-text">Student Attendance Portal</div>
+        </div>
+
+        <div class="class-card">
+            <span class="status-badge">🟢 CHECK-IN OPEN</span>
+            <h2>1.30823 Data Structures</h2>
+            <p>Dr. W. Tapo</p>
+            <div class="location-tag">📍 S3 Building - Snr Lab</div>
+        </div>
+
+        <div class="action-area">
+            
+            <!-- STEP 1: Start -->
+            <div id="step-1" style="width:100%">
+                <p style="text-align: center; margin-bottom: 20px;">Please sign in to verify attendance.</p>
+                <button class="start-btn" onclick="showLoginInput()">
+                    <svg style="width:18px; height:18px; margin-right:10px;" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.562 2.684-3.875 2.684-6.615z" fill="#4285F4"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.815H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"></path><path d="M3.964 10.606A5.41 5.41 0 0 1 3.682 9c0-.566.098-1.126.282-1.606V5.062H.957a9.006 9.006 0 0 0 0 7.938l3.007-2.394z" fill="#FBBC05"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.346l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.936l3.007 2.394C4.672 5.051 6.656 3.58 9 3.58z" fill="#EA4335"></path></svg>
+                    Sign in with Google
+                </button>
+            </div>
+
+            <!-- STEP 2: Login Input -->
+            <div id="step-2" class="google-login-box">
+                <span style="font-size: 24px; font-weight: bold; color: #4285F4;">G</span><span style="font-size: 24px; font-weight: bold; color: #EA4335;">o</span><span style="font-size: 24px; font-weight: bold; color: #FBBC05;">o</span><span style="font-size: 24px; font-weight: bold; color: #4285F4;">g</span><span style="font-size: 24px; font-weight: bold; color: #34A853;">l</span><span style="font-size: 24px; font-weight: bold; color: #EA4335;">e</span>
+                <h3 style="font-weight: 400; margin-top: 10px;">Sign in</h3>
+                <p style="font-size: 14px;">to continue to UPNG Smart-Scan</p>
+                <div class="input-group">
+                    <input type="email" id="userEmail" placeholder="Email or phone">
+                </div>
+                <button class="login-btn" onclick="triggerBrowserPermission()">Next</button>
+            </div>
+
+            <!-- STEP 3: Loading -->
+            <div id="loading-screen">
+                <div class="spinner"></div>
+                <p id="loading-text" style="font-weight: bold;">Checking roll call...</p>
+                <p style="font-size: 10px; color: #999;">Verifying Moodle Enrollment DB...</p>
+            </div>
+
+            <!-- STEP 4A: Success -->
+            <div id="success-screen">
+                <div class="big-icon">✅</div>
+                <h3 class="success-text">Attendance Recorded</h3>
+                <p><strong>Student:</strong> Marcus Bai</p>
+                <p><strong>ID:</strong> 202600000</p>
+                <button class="login-btn" onclick="location.reload()" style="background-color:white; border:1px solid #ddd; color:#333; margin-top:20px;">Done</button>
+            </div>
+
+            <!-- STEP 4B: Moodle Error (Wrong Class) -->
+            <div id="failure-screen">
+                <div class="big-icon">❌</div>
+                <h3 class="error-text">Attendance Failed</h3>
+                <div class="failure-box">
+                    <p style="margin:0; font-weight:bold; font-size:14px;">MOODLE ERROR: 403</p>
+                    <!-- This text is now dynamic -->
+                    <p id="error-message-text" style="font-size:13px; margin-top:5px; line-height:1.4;">Student is not enrolled.</p>
+                </div>
+                <button class="login-btn" onclick="location.reload()" style="background-color:#c62828; margin-top:15px;">Try Again</button>
+            </div>
+
+            <!-- STEP 4C: Permission Denied -->
+            <div id="permission-denied-screen">
+                <div class="big-icon" style="font-size: 40px;">📍🚫</div>
+                <h3 style="color: #ff9800;">Location Access Denied</h3>
+                <div class="denied-box">
+                    <strong>Why is this required?</strong><br>
+                    To prevent attendance fraud, we must verify you are physically present in the <strong>S3 Building</strong>.
+                </div>
+                <button class="login-btn" onclick="location.reload()" style="background-color:#333; margin-top:15px;">Reload App</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentUserEmail = "";
+
+        function showLoginInput() {
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'block';
+            document.getElementById('userEmail').focus();
+        }
+
+        function triggerBrowserPermission() {
+            currentUserEmail = document.getElementById('userEmail').value;
+            // Dim background, show popup
+            document.getElementById('browser-permission').style.display = 'block';
+            document.querySelector('.action-area').style.opacity = '0.3';
+        }
+
+        function handlePermission(isAllowed) {
+            document.querySelector('.action-area').style.opacity = '1';
+            document.getElementById('browser-permission').style.display = 'none';
+            document.getElementById('step-2').style.display = 'none';
+
+            if (isAllowed) {
+                processLogic();
+            } else {
+                document.getElementById('permission-denied-screen').style.display = 'block';
+            }
+        }
+
+        function processLogic() {
+            document.getElementById('loading-screen').style.display = 'block';
+
+            setTimeout(() => {
+                // FIXED LOGIC: Extract ID and perform EXACT match
+                const rawInput = currentUserEmail;
+                const studentID = rawInput.split('@')[0].trim(); // Get the ID part only
+                
+                const errorText = document.getElementById('error-message-text');
+
+                // 1. MARCUS BAI (Success) -> Exact match
+                if (studentID === "202600000") {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('success-screen').style.display = 'block';
+                
+                // 2. MOSES TAU (Wrong Class) -> Exact match
+                } else if (studentID === "202600002") {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    
+                    // Dynamic Error Message
+                    errorText.innerHTML = "Student <strong>Moses Tau</strong> (202600002) is not enrolled in course 1.30823.";
+                    
+                    document.getElementById('failure-screen').style.display = 'block';
+
+                // 3. ANY OTHER ID (Invalid)
+                } else {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    alert("INVALID ID: Unable to find student record in UPNG database.");
+                    location.reload();
+                }
+            }, 2000);
+        }
+    </script>
+
+</body>
+</html>
