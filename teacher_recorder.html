@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPNG Teacher Dashboard - S3</title>
+    <style>
+        /* CSS - Matches your original drawing */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 400px;
+        }
+
+        /* The UPNG Logo Style */
+        .logo-box {
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 10px 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #d32f2f;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .logo-box span { color: #1a237e; }
+
+        /* The Main Black Box */
+        .attendance-card {
+            border: 3px solid black;
+            padding: 20px;
+            text-align: left;
+            position: relative;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 0;
+            text-transform: uppercase;
+        }
+
+        .info-line {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .info-value { font-weight: normal; color: #333; }
+
+        .input-section { margin-top: 25px; text-align: center; }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            border: 3px solid black;
+            padding: 10px;
+            font-size: 18px;
+            width: 80%;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .btn-confirm {
+            margin-top: 15px;
+            background: none;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            padding: 10px;
+        }
+
+        .btn-confirm:hover { text-decoration: underline; }
+
+        /* Success & Error States */
+        #status-message {
+            margin-top: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: none;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .student-name-display {
+            font-size: 20px;
+            color: #000;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .success { color: #2e7d32; } /* Green */
+        .error { color: #c62828; } /* Red */
+        .warning { color: #e65100; } /* Orange/Dark Red for wrong class */
+
+        .check-icon {
+            font-size: 30px;
+            color: #2e7d32;
+            vertical-align: middle;
+            margin-left: 10px;
+            display: none;
+        }
+        
+        .reset-btn {
+            margin-top: 20px;
+            font-size: 12px;
+            color: gray;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-box">🏛️ <span>UPNG</span></div>
+
+        <div class="attendance-card">
+            <h2>Attendance Record</h2>
+            
+            <div class="info-line">CLASS: <span class="info-value">1.30823 Data Structures</span></div>
+            <div class="info-line">BUILDING: <span class="info-value">S3 (Maths/CS Building)</span></div>
+            <div class="info-line">ROOM: <span class="info-value">Snr Lab</span></div>
+
+            <div class="input-section">
+                <label>ENTER STUDENT ID</label>
+                <div style="display:flex; align-items:center; justify-content: center;">
+                    <input type="text" id="studentIdInput" placeholder="xxxxxxxxx" maxlength="9">
+                    <span id="checkIcon" class="check-icon">✅</span>
+                </div>
+                
+                <button class="btn-confirm" onclick="verifyStudent()">Confirm Attendance</button>
+            </div>
+
+            <div id="status-message"></div>
+        </div>
+        
+        <button class="reset-btn" onclick="resetForm()">Next Student</button>
+    </div>
+
+    <script>
+        // --- 1. THE UNIVERSITY MASTER LIST ---
+        // These students exist in the university system
+        const universityDatabase = {
+            "202600000": "Marcus Bai",
+            "202600002": "Moses Tau",  // He exists, but...
+            "202310188": "Bonnie Amof"
+        };
+
+        // --- 2. THE COURSE ENROLLMENT LIST ---
+        // Only these students are in Data Structures (1.30823)
+        // Moses Tau is MISSING from this list
+        const courseEnrollment = [
+            "202600000", 
+            "202310188"
+        ];
+
+        function verifyStudent() {
+            const inputField = document.getElementById("studentIdInput");
+            const studentID = inputField.value.trim();
+            const messageBox = document.getElementById("status-message");
+            const checkIcon = document.getElementById("checkIcon");
+            const confirmBtn = document.querySelector(".btn-confirm");
+
+            // Reset UI
+            messageBox.style.display = "block";
+            messageBox.innerHTML = ""; 
+            checkIcon.style.display = "none";
+            inputField.style.borderColor = "black";
+
+            // CHECK 1: Is Input Empty?
+            if (studentID === "") {
+                messageBox.innerText = "Please enter an ID.";
+                messageBox.className = "error";
+                return;
+            }
+
+            confirmBtn.innerText = "Checking Moodle...";
+            confirmBtn.disabled = true;
+
+            setTimeout(() => {
+                // CHECK 2: Does the Student ID exist in UPNG?
+                if (universityDatabase.hasOwnProperty(studentID)) {
+                    
+                    const studentName = universityDatabase[studentID];
+
+                    // CHECK 3: Is this student in THIS Course?
+                    if (courseEnrollment.includes(studentID)) {
+                        // --- SCENARIO A: SUCCESS (Marcus) ---
+                        messageBox.innerHTML = `
+                            <span class="student-name-display">${studentName}</span>
+                            <span class="success">ATTENDANCE RECORDED</span>
+                        `;
+                        checkIcon.style.display = "inline"; 
+                        inputField.style.borderColor = "#2e7d32"; // Green Border
+
+                    } else {
+                        // --- SCENARIO B: WRONG CLASS (Moses) ---
+                        messageBox.innerHTML = `
+                            <span class="student-name-display">${studentName}</span>
+                            <span class="warning" style="font-size:12px;">NOT REGISTERED FOR THIS COURSE</span>
+                        `;
+                        inputField.style.borderColor = "#e65100"; // Orange/Red Border
+                    }
+
+                } else {
+                    // --- SCENARIO C: INVALID ID (Fake Number) ---
+                    messageBox.innerText = "INVALID ID";
+                    messageBox.className = "error";
+                    inputField.style.borderColor = "#c62828"; // Red Border
+                }
+                
+                confirmBtn.innerText = "Confirm Attendance";
+                confirmBtn.disabled = false;
+            }, 800); 
+        }
+
+        function resetForm() {
+            document.getElementById("studentIdInput").value = "";
+            document.getElementById("studentIdInput").style.borderColor = "black";
+            document.getElementById("status-message").style.display = "none";
+            document.getElementById("checkIcon").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>
