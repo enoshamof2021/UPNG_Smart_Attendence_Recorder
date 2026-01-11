@@ -105,6 +105,13 @@
         let timerInterval = null; // Store the timer ID so we can stop it
         let isSessionActive = true;
 
+        // Function to show today's date and time
+    function setTime() {
+        const now = new Date();
+        // Formats like: "Mon, 11 Jan - 9:00 AM"
+        const options = { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' };
+        document.getElementById("currentDateDisplay").innerText = now.toLocaleDateString('en-PG', options);
+    }
         // 1. Initialize logic
         function generateQR() {
             if (!isSessionActive) return;
@@ -126,8 +133,12 @@
         }
 
         // 2. The Loop
-        function startLoop() {
+            
+            function startLoop() {
+            setTime();    // <--- Add this line
             generateQR(); // Run immediately
+
+  
 
             timerInterval = setInterval(() => {
                 timeLeft--;
